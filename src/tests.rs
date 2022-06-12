@@ -34,4 +34,25 @@ mod tests {
             .collect();
         assert_ne!(split_1, split_2);
     }
+
+    #[test]
+    fn test_edge_empty_stream() {
+        let source: Vec<u8> = vec![];
+        let mut result = split_bytes(source.into_iter(), 3);
+        assert!(result.next().is_none());
+    }
+
+    #[test]
+    fn test_edge_incorrect_argument() {
+        let source: Vec<u8> = vec![0x32, 0x76];
+        let mut piece_0 = split_bytes(source.clone().into_iter(), 0);
+        let piece_1 = split_bytes(source.clone().into_iter(), 1);
+        assert!(piece_0.all(|v| v.len() == 0));
+        let piece_1_vec: Vec<Vec<u8>> = piece_1.collect();
+        assert!(piece_1_vec.iter().all(|v| v.len() == 1));
+        assert_eq!(
+            source,
+            piece_1_vec.iter().map(|v| v[0]).collect::<Vec<u8>>()
+        );
+    }
 }

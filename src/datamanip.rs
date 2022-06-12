@@ -12,7 +12,10 @@ pub mod datamanip {
                 .chain(iter::repeat_with(|| rng.gen()))
                 .take(number)
                 .collect();
-            tuple[0] = tuple.iter().skip(1).fold(b, |acc, item| acc ^ item);
+            let core = tuple.iter().skip(1).fold(b, |acc, item| acc ^ item);
+            if let Some(item) = tuple.get_mut(0) {
+                *item = core
+            }
             tuple
         })
     }
