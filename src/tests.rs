@@ -1,7 +1,24 @@
 #[cfg(test)]
 mod tests {
+    use rand::thread_rng;
 
-    use crate::datamanip::datamanip::{merge_bytes, split_bytes};
+    use crate::datamanip::{recover, Operator};
+
+    fn split_bytes(
+        bytes: impl Iterator<Item = u8>,
+        number: usize,
+    ) -> impl Iterator<Item = Vec<u8>> {
+        let rng = thread_rng();
+        let mut operator = Operator::new(rng, number);
+        bytes.map(move |b| operator.disturb(b))
+    }
+
+    fn merge_bytes<IVB>(split_bytes: IVB) -> impl Iterator<Item = u8>
+    where
+        IVB: Iterator<Item = Vec<u8>>,
+    {
+        split_bytes.map(|vb| recover(vb.into_iter()).unwrap())
+    }
 
     #[test]
     fn test_consistency() {
