@@ -76,7 +76,7 @@ mod datamanip {
 
 #[cfg(test)]
 mod io {
-    use std::{io::Read, io::Write, str::Bytes};
+    use std::{io::Read, io::Write};
 
     use crate::io::{gather, share};
 
@@ -168,5 +168,62 @@ mod io {
         let result = String::from_utf8(writer.into_iter().collect());
         assert!(result.is_ok());
         assert_eq!(expected, result.unwrap());
+    }
+}
+
+#[cfg(test)]
+mod opt {
+    use std::path::PathBuf;
+
+    use crate::opt::expand_path;
+
+    #[test]
+    fn test_expand_path_lt() {
+        let path: Vec<PathBuf> = ["ein", "zwei", "drei"]
+            .into_iter()
+            .map(PathBuf::from)
+            .collect();
+        let result = expand_path(path, 10);
+        assert!(result.is_ok());
+        let expanded = result.unwrap();
+        assert_eq!(
+            ["ein", "zwei", "drei"]
+                .into_iter()
+                .map(PathBuf::from)
+                .collect::<Vec<_>>(),
+            expanded[..3].to_vec()
+        );
+        assert_eq!(
+            (0..7)
+                .map(|n| PathBuf::from(n.to_string()))
+                .collect::<Vec<_>>(),
+            expanded[3..].to_vec()
+        );
+    }
+
+    #[test]
+    fn test_expand_eq() {
+        let path: Vec<PathBuf> = ["ein", "zwei", "drei"]
+            .into_iter()
+            .map(PathBuf::from)
+            .collect();
+        let result = expand_path(path, 3);
+        assert!(result.is_ok());
+        assert_eq!(
+            ["ein", "zwei", "drei"]
+                .into_iter()
+                .map(PathBuf::from)
+                .collect::<Vec<_>>(),
+            result.unwrap()
+        );
+    }
+
+    #[test]
+    fn test_expand_gt() {
+        let path: Vec<PathBuf> = ["ein", "zwei", "drei"]
+            .into_iter()
+            .map(PathBuf::from)
+            .collect();
+        assert!(expand_path(path, 2).is_err());
     }
 }
