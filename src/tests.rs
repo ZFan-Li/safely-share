@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod datamanip {
     use rand::thread_rng;
 
     use crate::datamanip::{recover, Operator};
@@ -71,5 +71,102 @@ mod tests {
             source,
             piece_1_vec.iter().map(|v| v[0]).collect::<Vec<u8>>()
         );
+    }
+}
+
+#[cfg(test)]
+mod io {
+    use std::{io::Read, io::Write, str::Bytes};
+
+    use crate::io::{gather, share};
+
+    struct BytesReader<T: Iterator<Item = u8>>(T);
+
+    impl<T: Iterator<Item = u8>> Read for BytesReader<T> {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            for i in 0..buf.len() {
+                if let Some(b) = self.0.next() {
+                    buf[i] = b;
+                } else {
+                    return Ok(i);
+                }
+            }
+            Ok(buf.len())
+        }
+    }
+
+    impl<T: Iterator<Item = u8>> BytesReader<T> {
+        pub fn new(bytes: T) -> Self {
+            BytesReader(bytes)
+        }
+    }
+
+    struct BytesWriter(Vec<u8>);
+
+    impl Write for BytesWriter {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.extend(buf.clone().into_iter());
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl BytesWriter {
+        pub fn new() -> BytesWriter {
+            BytesWriter(Vec::new())
+        }
+    }
+
+    impl IntoIterator for BytesWriter {
+        type Item = u8;
+
+        type IntoIter = std::vec::IntoIter<Self::Item>;
+
+        fn into_iter(self) -> Self::IntoIter {
+            self.0.into_iter()
+        }
+    }
+
+    #[test]
+    fn test_encoding() {
+        let mut br = BytesReader::new([0xFE, 0xE3, 0x98].into_iter());
+        let mut bws: Vec<BytesWriter> = std::iter::repeat_with(|| BytesWriter::new())
+            .take(3)
+            .collect();
+        assert!(share(&mut br, &mut bws).is_ok());
+        assert!(bws.into_iter().all(|bw| bw.into_iter().count() == 3));
+    }
+
+    #[test]
+    fn test_decoding() {
+        let mut brs: Vec<_> =
+            std::iter::repeat_with(|| BytesReader::new([0xFE, 0xE3, 0x98].into_iter()))
+                .take(5)
+                .collect();
+        let mut bw = BytesWriter::new();
+        assert!(gather(&mut brs, &mut bw).is_ok());
+        assert!(bw.into_iter().count() == 3);
+    }
+
+    #[test]
+    fn test_consistency() {
+        let expected = "Hello world!";
+        let mut reader = BytesReader::new(expected.bytes());
+        let mut writers: Vec<BytesWriter> = std::iter::repeat_with(|| BytesWriter::new())
+            .take(5)
+            .collect();
+        assert!(share(&mut reader, &mut writers).is_ok());
+        let mut readers: Vec<_> = writers
+            .into_iter()
+            .map(|wr| BytesReader::new(wr.into_iter()))
+            .collect();
+        let mut writer = BytesWriter::new();
+        assert!(gather(&mut readers, &mut writer).is_ok());
+        let result = String::from_utf8(writer.into_iter().collect());
+        assert!(result.is_ok());
+        assert_eq!(expected, result.unwrap());
     }
 }
