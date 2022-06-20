@@ -13,8 +13,8 @@ decided to split the right of executing it to Alice, Bob and Carol, so
 the source code can be compiled and executed only if all them reach an
 agreement that it should be ran.
 
-```bash
-$ cat <<'=======' | safely share --with Alice Bob Carol
+```perl
+$ cat <<EOF | safely share --with Alice Bob Carol
 > #include <stdio.h>
 >
 > int man(char argv[]) {
@@ -22,7 +22,7 @@ $ cat <<'=======' | safely share --with Alice Bob Carol
 >   printf("the Rumbling!" * repeat);
 > }
 >
-> =======
+EOF
 $ ls -a
 .  ..  Alice  Bob  Carol
 $ xxd Alice
