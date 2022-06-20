@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    io::{self, ErrorKind},
+    path::PathBuf,
+};
 
 use structopt::StructOpt;
 
@@ -30,27 +33,28 @@ pub enum Opt {
     ///
     /// All files in `input` should have equal length. If they do
     /// have, a result will be produced anyway, but the result will be
-    /// right(usable or readable) if and only if sources from `input`
-    /// are complete and correct.
+    /// right(readable or executable) if and only if sources from
+    /// `input` are complete and correct. Print result to stdout if no
+    /// `into` is given.
     Gather {
         /// Path to ciphers.
         #[structopt(parse(from_os_str))]
         input: Vec<PathBuf>,
         /// Path to output.
         #[structopt(long, short)]
-        into: PathBuf,
+        into: Option<PathBuf>,
     },
 }
 
-pub fn expand_path(
-    mut given_path: Vec<PathBuf>,
-    total_number: usize,
-) -> Result<Vec<PathBuf>, String> {
+pub fn expand_path(mut given_path: Vec<PathBuf>, total_number: usize) -> io::Result<Vec<PathBuf>> {
     match total_number.cmp(&given_path.len()) {
-        std::cmp::Ordering::Less => Err(format!(
-            "Arguments aren't compatible. Provide {} path(s), but need {} piece(s) of output.",
-            given_path.len(),
-            &total_number
+        std::cmp::Ordering::Less => Err(io::Error::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "Arguments aren't compatible. Provide {} path(s), but need {} piece(s) of output.",
+                given_path.len(),
+                &total_number
+            ),
         )),
         std::cmp::Ordering::Equal => Ok(given_path),
         std::cmp::Ordering::Greater => {
@@ -59,4 +63,18 @@ pub fn expand_path(
             Ok(given_path)
         }
     }
+}
+
+pub fn get_length(paths: &Vec<PathBuf>) -> io::Result<u64> {
+    let mut len: u64 = 0;
+    for (idx, path) in paths.iter().enumerate() {
+        let md = path.metadata()?;
+        if idx == 0 || md.len() == len {
+            len = md.len();
+        } else {
+            let err = io::Error::new(ErrorKind::InvalidData, "Ciphers must have equal length");
+            return Err(err);
+        }
+    }
+    Ok(len)
 }

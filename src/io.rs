@@ -32,6 +32,9 @@ pub fn read_from_vector<R: Iterator<Item = io::Result<u8>>>(
 }
 
 pub fn gather<R: Read, W: Write>(source: &mut Vec<R>, output: &mut W) -> io::Result<()> {
+    if source.is_empty() {
+        return Ok(());
+    }
     let mut vib = source.into_iter().map(|vr| vr.bytes()).collect();
     loop {
         let maybe_cipher = read_from_vector(&mut vib)?;

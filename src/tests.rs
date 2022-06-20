@@ -175,7 +175,7 @@ mod io {
 mod opt {
     use std::path::PathBuf;
 
-    use crate::opt::expand_path;
+    use crate::opt::{expand_path, get_length};
 
     #[test]
     fn test_expand_path_lt() {
@@ -225,5 +225,44 @@ mod opt {
             .map(PathBuf::from)
             .collect();
         assert!(expand_path(path, 2).is_err());
+    }
+
+    fn test_resource(filename: &str) -> PathBuf {
+        let root_dir = env!("CARGO_MANIFEST_DIR");
+        let mut path = PathBuf::from(root_dir);
+        path.push(".test-resource");
+        path.push(filename);
+        path
+    }
+
+    #[test]
+    fn test_equal_length() {
+        let equal_paths: Vec<PathBuf> = ["EQUAL-00", "EQUAL-01", "EQUAL-02"]
+            .into_iter()
+            .map(test_resource)
+            .collect();
+        let result = get_length(&equal_paths);
+        assert!(result.is_ok());
+        assert_eq!(11, result.unwrap());
+    }
+
+    #[test]
+    fn test_unequal_length() {
+        let unequal_paths: Vec<PathBuf> = ["EQUAL-00", "UNEQUAL", "EQUAL-01"]
+            .into_iter()
+            .map(test_resource)
+            .collect();
+        let result = get_length(&unequal_paths);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_preceding_empty() {
+        let unequal_paths: Vec<PathBuf> = ["EMPTY", "UNEQUAL"]
+            .into_iter()
+            .map(test_resource)
+            .collect();
+        let result = get_length(&unequal_paths);
+        assert!(result.is_err());
     }
 }
