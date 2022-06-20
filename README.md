@@ -42,3 +42,4 @@ int man(char argv[]) {
 }
 ```
 
+### License: GPLv3
