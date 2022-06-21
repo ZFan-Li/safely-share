@@ -3,8 +3,7 @@
 This is a interesting code snippet that can split a file to several
 pieces and encipher them to bytes which cannot be deciphered
 separately. In fact, it is impossible for anyone to get even one bit
-of information about the original from the ciphers except they get all
-pieces of them.
+of information of the original data except they get all the ciphers.
 
 ## Example
 
