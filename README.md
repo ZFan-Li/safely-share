@@ -1,4 +1,4 @@
-# Share data with your friends safely
+# Share data with others safely
 
 This is a interesting code snippet that can split a file to several
 pieces and encipher them to bytes which cannot be deciphered
