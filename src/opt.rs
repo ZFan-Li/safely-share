@@ -1,5 +1,6 @@
 use std::{
     io::{self, ErrorKind},
+    iter,
     path::PathBuf,
 };
 
@@ -46,6 +47,27 @@ pub enum Opt {
     },
 }
 
+pub fn length_of_number(num: usize) -> usize {
+    iter::successors(Some(num), |n| {
+        let succ = n / 10;
+        if succ == 0 {
+            None
+        } else {
+            Some(succ)
+        }
+    })
+    .count()
+}
+
+pub fn padded_number(num: usize, pad: usize) -> String {
+    let len = length_of_number(num);
+    if let Some(delta) = pad.checked_sub(len) {
+        "0".repeat(delta) + &num.to_string()
+    } else {
+        num.to_string()
+    }
+}
+
 pub fn expand_path(mut given_path: Vec<PathBuf>, total_number: usize) -> io::Result<Vec<PathBuf>> {
     match total_number.cmp(&given_path.len()) {
         std::cmp::Ordering::Less => Err(io::Error::new(
@@ -59,7 +81,8 @@ pub fn expand_path(mut given_path: Vec<PathBuf>, total_number: usize) -> io::Res
         std::cmp::Ordering::Equal => Ok(given_path),
         std::cmp::Ordering::Greater => {
             let delta = total_number - given_path.len();
-            given_path.extend((0..delta).map(|n| PathBuf::from(n.to_string())));
+            let pad = length_of_number(delta - 1);
+            given_path.extend((0..delta).map(|n| PathBuf::from(padded_number(n, pad))));
             Ok(given_path)
         }
     }

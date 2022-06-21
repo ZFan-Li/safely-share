@@ -175,7 +175,30 @@ mod io {
 mod opt {
     use std::path::PathBuf;
 
-    use crate::opt::{expand_path, get_length};
+    use crate::opt::{expand_path, get_length, length_of_number, padded_number};
+
+    #[test]
+    fn test_number_length() {
+        for i in 0..10 {
+            assert_eq!(1, length_of_number(i));
+        }
+        for i in 10..100 {
+            assert_eq!(2, length_of_number(i));
+        }
+        for i in 100..1000 {
+            assert_eq!(3, length_of_number(i));
+        }
+    }
+
+    #[test]
+    fn test_pad_number() {
+        assert_eq!("7", padded_number(7, 1));
+        assert_eq!("07", padded_number(7, 2));
+        assert_eq!("007", padded_number(7, 3));
+        assert_eq!("100", padded_number(100, 3));
+        assert_eq!("100", padded_number(100, 2));
+        assert_eq!("100", padded_number(100, 0));
+    }
 
     #[test]
     fn test_expand_path_lt() {
@@ -225,6 +248,18 @@ mod opt {
             .map(PathBuf::from)
             .collect();
         assert!(expand_path(path, 2).is_err());
+    }
+
+    #[test]
+    fn test_expand_many() {
+        let result = expand_path(Vec::new(), 11);
+        assert!(result.is_ok());
+        let path = result.unwrap();
+        let expected: Vec<PathBuf> = (0..=10)
+            .map(|n| format!("{:02}", n))
+            .map(PathBuf::from)
+            .collect();
+        assert_eq!(expected, path);
     }
 
     fn test_resource(filename: &str) -> PathBuf {
